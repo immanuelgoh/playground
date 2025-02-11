@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Timer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem;
+        }
+
+        .timer-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+         .time {
+            font-size: 2.5rem;
+            font-family: monospace;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e2e2;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #f5f5f5;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary {
+            background-color: #1e1e1e;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #868e96;
+        }
+
+        .btn-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e2e2e2;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: #2563eb;
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="timer-display">
+            <button class="btn btn-circle" id="decreaseBtn">-</button>
+            <div class="time" id="timeDisplay">5:00</div>
+            <button class="btn btn-circle" id="increaseBtn">+</button>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="startBtn" style="width: 100px;">Start</button>
+            <button class="btn" id="resetBtn" style="width: 100px;">Reset</button>
+        </div>
+
+        <div class="presets">
+            <button class="btn" onclick="setPresetTime(3)">3min</button>
+            <button class="btn" onclick="setPresetTime(5)">5min</button>
+            <button class="btn" onclick="setPresetTime(10)">10min</button>
+            <button class="btn" onclick="setPresetTime(20)">20min</button>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft = 300; // 5 minutes in seconds
+        let totalTime = 300;
+        let isActive = false;
+        let intervalId = null;
+
+        const timeDisplay = document.getElementById('timeDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const decreaseBtn = document.getElementById('decreaseBtn');
+        const increaseBtn = document.getElementById('increaseBtn');
+        const progressBar = document.getElementById('progressBar');
+        const presetBtns = document.querySelectorAll('.presets .btn');
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timeDisplay.textContent = formatTime(timeLeft);
+            const progress = (timeLeft / totalTime) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function toggleTimer() {
+            if (isActive) {
+                // Pause
+                clearInterval(intervalId);
+                startBtn.textContent = 'Start';
+                isActive = false;
+                enableControls();
+            } else if (timeLeft > 0) {
+                // Start
+                isActive = true;
+                startBtn.textContent = 'Pause';
+                disableControls();
+                intervalId = setInterval(() => {
+                    timeLeft--;
+                    updateDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(intervalId);
+                        isActive = false;
+                        startBtn.textContent = 'Start';
+                        enableControls();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(intervalId);
+            isActive = false;
+            timeLeft = 300;
+            totalTime = 300;
+            startBtn.textContent = 'Start';
+            enableControls();
+            updateDisplay();
+        }
+
+        function adjustTime(seconds) {
+            if (!isActive) {
+                timeLeft = Math.max(0, timeLeft + seconds);
+                totalTime = timeLeft;
+                updateDisplay();
+            }
+        }
+
+        function setPresetTime(minutes) {
+            if (!isActive) {
+                timeLeft = minutes * 60;
+                totalTime = timeLeft;
+                updateDisplay();
+            }
+        }
+
+        function disableControls() {
+            decreaseBtn.disabled = true;
+            increaseBtn.disabled = true;
+            presetBtns.forEach(btn => btn.disabled = true);
+        }
+
+        function enableControls() {
+            decreaseBtn.disabled = false;
+            increaseBtn.disabled = false;
+            presetBtns.forEach(btn => btn.disabled = false);
+        }
+
+        // Event Listeners
+        startBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        decreaseBtn.addEventListener('click', () => adjustTime(-60));
+        increaseBtn.addEventListener('click', () => adjustTime(60));
+
+        // Initial display
+        updateDisplay();
+    </script>
+</body>
+</html>
